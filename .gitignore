@@ -1,0 +1,16 @@
+# Ignore macOS system files
+.DS_Store
+
+# Java build files
+/out/
+/bin/
+/build/
+
+# IDE configuration
+.idea/
+.vscode/
+
+# Temporary files
+*.class
+*.log
+*.tmp
