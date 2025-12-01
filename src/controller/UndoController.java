@@ -1,96 +1,43 @@
 package controller;
 
 import model.MancalaGame;
-import model.Player;
 
 /**
- * Controller dedicated to managing undo functionality.
+ * Thin wrapper over the model's undo functionality.
  */
 public class UndoController {
-    private MancalaGame model;
-    private int undoCountThisTurn;
-    private boolean lastActionWasUndo;
-    private Player currentTurnPlayer;
-    private static final int MAX_UNDOS_PER_TURN = 3;
-    
+    private final MancalaGame model;
+
     public UndoController(MancalaGame model) {
         this.model = model;
-        this.undoCountThisTurn = 0;
-        this.lastActionWasUndo = false;
-        this.currentTurnPlayer = Player.PLAYER_A;
     }
-    
-    public void newTurn(Player player) {
-        if (player != null && player != currentTurnPlayer) {
-            undoCountThisTurn = 0;
-            currentTurnPlayer = player;
-        }
-        lastActionWasUndo = false;
-    }
-    
-    public void onMoveMade() {
-        lastActionWasUndo = false;
-    }
-    
+
     public UndoResult performUndo() {
-        if (lastActionWasUndo) {
-            return new UndoResult(false, "Must make a move before undoing again");
-        }
-        
-        if (undoCountThisTurn >= MAX_UNDOS_PER_TURN) {
-            return new UndoResult(false, 
-                "Maximum undos (" + MAX_UNDOS_PER_TURN + ") reached this turn");
-        }
-        
         if (model.undo()) {
-            undoCountThisTurn++;
-            lastActionWasUndo = true;
-            
-            String message = "Undo successful. Undos used: " + 
-                           undoCountThisTurn + "/" + MAX_UNDOS_PER_TURN;
+            int remaining = model.getUndosRemainingThisTurn();
+            String message = "Undo successful. Remaining undos this turn: " + remaining;
             return new UndoResult(true, message);
-        } else {
-            return new UndoResult(false, "No move to undo");
         }
+        return new UndoResult(false, "No undo available right now.");
     }
-    
+
     public boolean isUndoAvailable() {
-        return !lastActionWasUndo && 
-               undoCountThisTurn < MAX_UNDOS_PER_TURN &&
-               model.canUndo();
+        return model.canUndo();
     }
-    
-    public int getUndosRemaining() {
-        return MAX_UNDOS_PER_TURN - undoCountThisTurn;
-    }
-    
-    public int getUndosUsed() {
-        return undoCountThisTurn;
-    }
-    
-    public void reset() {
-        undoCountThisTurn = 0;
-        lastActionWasUndo = false;
-        currentTurnPlayer = Player.PLAYER_A;
-    }
-    
-    public boolean wasLastActionUndo() {
-        return lastActionWasUndo;
-    }
-    
+
     public static class UndoResult {
-        private boolean success;
-        private String message;
-        
+        private final boolean success;
+        private final String message;
+
         public UndoResult(boolean success, String message) {
             this.success = success;
             this.message = message;
         }
-        
+
         public boolean isSuccess() {
             return success;
         }
-        
+
         public String getMessage() {
             return message;
         }

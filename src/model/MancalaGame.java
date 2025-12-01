@@ -68,6 +68,9 @@ public class MancalaGame {
      */
     private boolean manualSnapshotQueued = false;
 
+    /** Maximum undos allowed per player within a single turn. */
+    private static final int MAX_UNDOS_PER_TURN = 3;
+
     /** How many undos the current player has used this turn (max 3). */
     private int undoCountThisTurn = 0;
 
@@ -238,7 +241,6 @@ public class MancalaGame {
 
             // When the turn switches, we reset undo tracking for the new player.
             undoCountThisTurn = 0;
-            history.clear(); // cannot undo into the previous player's move.
         }
 
         // After a successful move, the last action is definitely NOT an undo.
@@ -284,7 +286,7 @@ public class MancalaGame {
         }
 
         // Cannot exceed 3 undos per turn.
-        if (undoCountThisTurn >= 3) {
+        if (undoCountThisTurn >= MAX_UNDOS_PER_TURN) {
             return false;
         }
 
@@ -310,6 +312,13 @@ public class MancalaGame {
      */
     public boolean canUndo() {
         return !history.isEmpty();
+    }
+
+    /**
+     * @return remaining undos the current player can perform this turn.
+     */
+    public int getUndosRemainingThisTurn() {
+        return Math.max(0, MAX_UNDOS_PER_TURN - undoCountThisTurn);
     }
 
     // ---------------------- Query methods for view/controller ----------------------
