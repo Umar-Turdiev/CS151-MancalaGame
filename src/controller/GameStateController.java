@@ -1,5 +1,7 @@
 package controller;
 
+import model.MancalaGame;
+
 /**
  * Controller for managing game state transitions and validation.
  */

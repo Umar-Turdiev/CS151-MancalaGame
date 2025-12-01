@@ -2,6 +2,9 @@ package controller;
 
 import java.awt.event.*;
 
+import model.MancalaGame;
+import view.PitView;
+
 /**
  * Controller for individual pit components.
  * Handles mouse interactions with specific pits on the board.

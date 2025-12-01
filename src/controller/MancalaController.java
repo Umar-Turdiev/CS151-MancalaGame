@@ -1,6 +1,14 @@
 package controller;
 
 import javax.swing.*;
+
+import model.MancalaGame;
+import model.MoveResult;
+import model.Player;
+import view.ClassicBoardStyle;
+import view.MancalaView;
+import view.ModernBoardStyle;
+
 import java.awt.event.*;
 
 /**
@@ -110,7 +118,7 @@ public class MancalaController {
                 
                 model.initializeGame(initialStones);
                 stateController.startGame();
-                undoController.newTurn('A');
+                undoController.newTurn(Player.PLAYER_A);
                 
                 view.updateBoard(model.getBoardState());
                 view.startGame();

@@ -48,7 +48,7 @@ public class MoveResult {
         return moveLegal;
     }
 
-    public boolean isFreeTurn() {
+    public boolean isExtraTurn() {
         return freeTurn;
     }
 

@@ -62,6 +62,12 @@ public class MancalaGame {
      */
     private final Deque<GameState> history = new ArrayDeque<>();
 
+    /**
+     * True when the controller already saved a snapshot before calling makeMove.
+     * Used to avoid storing duplicate snapshots in the history.
+     */
+    private boolean manualSnapshotQueued = false;
+
     /** How many undos the current player has used this turn (max 3). */
     private int undoCountThisTurn = 0;
 
@@ -110,8 +116,16 @@ public class MancalaGame {
         history.clear();
         undoCountThisTurn = 0;
         lastActionWasUndo = false;
+        manualSnapshotQueued = false;
 
         fireChangeEvent();
+    }
+
+    /**
+     * Backwards compatible alias for initialize used by some controllers.
+     */
+    public void initializeGame(int stonesPerPit) {
+        initialize(stonesPerPit);
     }
 
     /**
@@ -150,8 +164,13 @@ public class MancalaGame {
                                   "Selected pit is empty.");
         }
 
-        // BEFORE performing the move, push a snapshot for undo.
-        history.push(new GameState(board, currentPlayer, gameOver));
+        // BEFORE performing the move, push a snapshot for undo unless
+        // the controller already saved the current state.
+        if (!manualSnapshotQueued) {
+            history.push(new GameState(board, currentPlayer, gameOver));
+        } else {
+            manualSnapshotQueued = false;
+        }
 
         // Core sowing logic.
         int stonesInHand = board[pitIndex];
@@ -233,6 +252,16 @@ public class MancalaGame {
     }
 
     /**
+     * Explicit hook for controllers that want to capture the current state
+     * before calling makeMove. If not invoked, makeMove will still save a
+     * snapshot automatically.
+     */
+    public void saveState() {
+        history.push(new GameState(board, currentPlayer, gameOver));
+        manualSnapshotQueued = true;
+    }
+
+    /**
      * Attempts to undo the last move made in the current player's turn.
      *
      * Rules enforced:
@@ -270,9 +299,17 @@ public class MancalaGame {
         // Update undo tracking.
         undoCountThisTurn++;
         lastActionWasUndo = true;
+        manualSnapshotQueued = false;
 
         fireChangeEvent();
         return true;
+    }
+
+    /**
+     * @return true if there is at least one snapshot available to undo.
+     */
+    public boolean canUndo() {
+        return !history.isEmpty();
     }
 
     // ---------------------- Query methods for view/controller ----------------------
@@ -322,6 +359,15 @@ public class MancalaGame {
     }
 
     /**
+     * Alias used by some controllers/views.
+     *
+     * @return copy of current board state.
+     */
+    public int[] getBoardState() {
+        return getBoardSnapshot();
+    }
+
+    /**
      * Convenience: @return the store index for the given player.
      */
     public int getStoreIndex(Player player) {
@@ -340,6 +386,35 @@ public class MancalaGame {
      */
     public int getTotalPockets() {
         return TOTAL_POCKETS;
+    }
+
+    /**
+     * Validates whether the provided pit index represents a legal move for
+     * the current player.
+     */
+    public boolean isValidMove(int pitIndex) {
+        if (gameOver) {
+            return false;
+        }
+        if (pitIndex < 0 || pitIndex >= TOTAL_POCKETS) {
+            return false;
+        }
+        if (isStore(pitIndex)) {
+            return false;
+        }
+        if (!isOwnPit(pitIndex, currentPlayer)) {
+            return false;
+        }
+        return board[pitIndex] > 0;
+    }
+
+    /**
+     * Convenience access to both players' store scores.
+     *
+     * @return array with scores [playerA, playerB]
+     */
+    public int[] getMancalaScores() {
+        return new int[] { board[STORE_A], board[STORE_B] };
     }
 
     /**
@@ -454,7 +529,7 @@ public class MancalaGame {
      *  - move all from its pits into its store
      *  - set those pits to 0
      */
-    private void collectRemainingStones() {
+    public void collectRemainingStones() {
         boolean sideAEmpty = isSideEmpty(Player.PLAYER_A);
         boolean sideBEmpty = isSideEmpty(Player.PLAYER_B);
 

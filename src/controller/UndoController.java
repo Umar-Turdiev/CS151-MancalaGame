@@ -1,5 +1,8 @@
 package controller;
 
+import model.MancalaGame;
+import model.Player;
+
 /**
  * Controller dedicated to managing undo functionality.
  */
@@ -7,18 +10,18 @@ public class UndoController {
     private MancalaGame model;
     private int undoCountThisTurn;
     private boolean lastActionWasUndo;
-    private char currentTurnPlayer;
+    private Player currentTurnPlayer;
     private static final int MAX_UNDOS_PER_TURN = 3;
     
     public UndoController(MancalaGame model) {
         this.model = model;
         this.undoCountThisTurn = 0;
         this.lastActionWasUndo = false;
-        this.currentTurnPlayer = 'A';
+        this.currentTurnPlayer = Player.PLAYER_A;
     }
     
-    public void newTurn(char player) {
-        if (player != currentTurnPlayer) {
+    public void newTurn(Player player) {
+        if (player != null && player != currentTurnPlayer) {
             undoCountThisTurn = 0;
             currentTurnPlayer = player;
         }
@@ -68,7 +71,7 @@ public class UndoController {
     public void reset() {
         undoCountThisTurn = 0;
         lastActionWasUndo = false;
-        currentTurnPlayer = 'A';
+        currentTurnPlayer = Player.PLAYER_A;
     }
     
     public boolean wasLastActionUndo() {
