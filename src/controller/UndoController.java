@@ -1,3 +1,9 @@
+/*
+ * Assignment: CS151 Finals Project - Mancala Game
+ * Author: Sana Al Hamimidi
+ * Date: 2025-11-19
+ */
+
 package controller;
 
 import model.MancalaGame;

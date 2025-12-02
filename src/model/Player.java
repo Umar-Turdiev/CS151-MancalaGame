@@ -1,3 +1,9 @@
+/*
+ * Assignment: CS151 Finals Project - Mancala Game
+ * Author: Ali Halmamat
+ * Date: 2025-11-29
+ */
+
 package model;
 
 /**
