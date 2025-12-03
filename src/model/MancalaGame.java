@@ -83,6 +83,9 @@ public class MancalaGame {
     /** True if the last action performed was an undo (no double-undo allowed). */
     private boolean lastActionWasUndo = false;
 
+    /** Player who may currently undo the most recent move. */
+    private Player undoAvailableFor = null;
+
     /** Optional ChangeListeners – typical MVC pattern for notifying views. */
     private final List<ChangeListener> listeners = new ArrayList<>();
 
@@ -126,6 +129,7 @@ public class MancalaGame {
         undoCountThisTurn = 0;
         lastActionWasUndo = false;
         manualSnapshotQueued = false;
+        undoAvailableFor = null;
 
         fireChangeEvent();
     }
@@ -173,6 +177,9 @@ public class MancalaGame {
                                   "Selected pit is empty.");
         }
 
+        Player player = currentPlayer;
+        expireUndoIfDifferentPlayer(player);
+
         // BEFORE performing the move, push a snapshot for undo unless
         // the controller already saved the current state.
         if (!manualSnapshotQueued) {
@@ -186,7 +193,6 @@ public class MancalaGame {
         board[pitIndex] = 0; // we pick up all stones from this pit
 
         int currentIndex = pitIndex;
-        Player player = currentPlayer;
         int myStore = getStoreIndex(player);
         int opponentStore = getStoreIndex(player.opposite());
 
@@ -244,13 +250,11 @@ public class MancalaGame {
             // switch turns
             currentPlayer = currentPlayer.opposite();
             nextPlayer = currentPlayer;
-
-            // When the turn switches, we reset undo tracking for the new player.
-            undoCountThisTurn = 0;
         }
 
         // After a successful move, the last action is definitely NOT an undo.
         lastActionWasUndo = false;
+        undoAvailableFor = player;
 
         fireChangeEvent();
 
@@ -265,6 +269,7 @@ public class MancalaGame {
      * snapshot automatically.
      */
     public void saveState() {
+        expireUndoIfDifferentPlayer(currentPlayer);
         history.push(new GameState(board, currentPlayer, gameOver));
         manualSnapshotQueued = true;
     }
@@ -283,6 +288,10 @@ public class MancalaGame {
     public boolean undo() {
         // No history to undo.
         if (history.isEmpty()) {
+            return false;
+        }
+
+        if (undoAvailableFor == null) {
             return false;
         }
 
@@ -308,6 +317,7 @@ public class MancalaGame {
         undoCountThisTurn++;
         lastActionWasUndo = true;
         manualSnapshotQueued = false;
+        undoAvailableFor = null;
 
         fireChangeEvent();
         return true;
@@ -317,7 +327,7 @@ public class MancalaGame {
      * @return true if there is at least one snapshot available to undo.
      */
     public boolean canUndo() {
-        return !history.isEmpty();
+        return undoAvailableFor != null && !history.isEmpty();
     }
 
     /**
@@ -484,6 +494,20 @@ public class MancalaGame {
         ChangeEvent event = new ChangeEvent(this);
         for (ChangeListener listener : listeners) {
             listener.stateChanged(event);
+        }
+    }
+
+    /**
+     * Clears any stored undo state if a different player has started a move.
+     */
+    private void expireUndoIfDifferentPlayer(Player actingPlayer) {
+        if (undoAvailableFor != null && actingPlayer != null
+                && undoAvailableFor != actingPlayer) {
+            history.clear();
+            manualSnapshotQueued = false;
+            lastActionWasUndo = false;
+            undoAvailableFor = null;
+            undoCountThisTurn = 0;
         }
     }
 

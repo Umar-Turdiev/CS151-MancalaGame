@@ -6,11 +6,14 @@
 
 package view;
 
+import model.MancalaGame;
+
 import javax.swing.JButton;
 import javax.swing.Timer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -28,6 +31,7 @@ public class PitComponent extends JButton implements PitView {
     private final boolean store;
     private StyleStrategy style;
     private Color baseColor;
+    private final String slotLabel;
 
     private int targetStoneCount = 0;
     private int displayedStoneCount = 0;
@@ -48,6 +52,7 @@ public class PitComponent extends JButton implements PitView {
     public PitComponent(int pitIndex, boolean isStore, StyleStrategy style) {
         this.pitIndex = pitIndex;
         this.store = isStore;
+        this.slotLabel = computeSlotLabel(pitIndex, isStore);
         setPreferredSize(new Dimension(isStore ? 90 : 80, isStore ? 220 : 80));
         setFocusPainted(false);
         setBorderPainted(false);
@@ -178,6 +183,10 @@ public class PitComponent extends JButton implements PitView {
         g2.setStroke(new BasicStroke(store ? 4f : 2f));
         g2.drawRoundRect(1, 1, width - 2, height - 2, arc, arc);
 
+        if (store) {
+            drawStoreUnderlay(g2);
+        }
+
         drawStones(g2);
         drawLabels(g2);
 
@@ -226,18 +235,57 @@ public class PitComponent extends JButton implements PitView {
      */
     private void drawLabels(Graphics2D g2) {
         g2.setColor(style.getTextColor());
+
+        Font labelFont = store
+                ? style.getLabelFont().deriveFont((float) style.getLabelFont().getSize())
+                : style.getPitFont();
+        g2.setFont(labelFont);
+        FontMetrics labelMetrics = g2.getFontMetrics();
+
+        if (slotLabel != null && !slotLabel.isEmpty()) {
+            int labelY = labelMetrics.getAscent() + (store ? 12 : 8);
+            int labelX = (getWidth() - labelMetrics.stringWidth(slotLabel)) / 2;
+            g2.drawString(slotLabel, labelX, labelY);
+        }
+
         g2.setFont(style.getPitFont());
         FontMetrics fm = g2.getFontMetrics();
         String countText = String.valueOf(targetStoneCount);
         int y = getHeight() - (store ? 14 : 10);
         int x = (getWidth() - fm.stringWidth(countText)) / 2;
         g2.drawString(countText, x, y);
+    }
 
-        if (store) {
-            String label = "Store";
-            int labelY = fm.getAscent() + 6;
-            int labelX = (getWidth() - fm.stringWidth(label)) / 2;
-            g2.drawString(label, labelX, labelY);
+    /**
+     * Draws the "Mancala" label beneath the stones so that marbles render on top.
+     */
+    private void drawStoreUnderlay(Graphics2D g2) {
+        g2.setFont(style.getPitFont());
+        g2.setColor(style.getTextColor().darker());
+        FontMetrics metrics = g2.getFontMetrics();
+        String label = "Mancala";
+        int y = getHeight() / 2;
+        int x = (getWidth() - metrics.stringWidth(label)) / 2;
+        g2.drawString(label, x, y);
+    }
+
+    /**
+     * Generates the textual label for pits and Mancalas per assignment spec.
+     */
+    private static String computeSlotLabel(int index, boolean isStore) {
+        if (isStore) {
+            return index == MancalaGame.STORE_A ? "A" : "B";
         }
+
+        if (index >= 0 && index < MancalaGame.PITS_PER_SIDE) {
+            return "A" + (index + 1);
+        }
+
+        if (index > MancalaGame.STORE_A && index < MancalaGame.STORE_B) {
+            int labelNumber = index - MancalaGame.STORE_A;
+            return "B" + labelNumber;
+        }
+
+        return "";
     }
 }
