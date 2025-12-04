@@ -1,5 +1,7 @@
 # Mancala Game (CS151 Team Project)
 
+<img width="1012" height="712" alt="Screenshot 2025-12-01 at 6 03 15 PM" src="https://github.com/user-attachments/assets/215c30b0-f9fd-4a61-90bb-c5f334bb566e" />
+
 A Java Swing implementation of the classic two-player Mancala board game, following the **MVC** and **Strategy** design patterns.
 
 ## Features
