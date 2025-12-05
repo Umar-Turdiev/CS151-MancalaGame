@@ -31,7 +31,7 @@ public class MancalaController {
         this.view = view;
         this.undoController = new UndoController(model);
         this.stateController = new GameStateController(model);
-        
+
         initializeController();
     }
     
@@ -40,6 +40,7 @@ public class MancalaController {
         view.addUndoButtonListener(new UndoButtonListener());
         view.addStyleSelectionListener(new StyleSelectionListener());
         view.addInitialStonesListener(new InitialStonesListener());
+        model.addChangeListener(e -> refreshView());
     }
     
     private class PitClickListener implements ActionListener {
@@ -60,10 +61,6 @@ public class MancalaController {
             
             model.saveState();
             MoveResult result = model.makeMove(pitIndex);
-            
-            view.updateBoard(model.getBoardState());
-            view.updateCurrentPlayer(model.getCurrentPlayer());
-            view.updateUndoButton(undoController.isUndoAvailable());
             
             boolean extraTurn = (result != null && result.isExtraTurn());
             if (extraTurn) {
@@ -92,9 +89,6 @@ public class MancalaController {
             UndoController.UndoResult result = undoController.performUndo();
             
             if (result.isSuccess()) {
-                view.updateBoard(model.getBoardState());
-                view.updateCurrentPlayer(model.getCurrentPlayer());
-                view.updateUndoButton(undoController.isUndoAvailable());
                 Player current = model.getCurrentPlayer();
                 String turnText = " Player " + (current == Player.PLAYER_A ? "A" : "B") + "'s turn.";
                 view.showMessage(result.getMessage() + turnText);
@@ -136,10 +130,7 @@ public class MancalaController {
                 stateController.transitionTo(GameStateController.GameState.INITIAL_SETUP);
                 stateController.startGame();
                 
-                view.updateBoard(model.getBoardState());
                 view.startGame();
-                view.updateCurrentPlayer(model.getCurrentPlayer());
-                view.updateUndoButton(false);
                 view.showMessage("Player A's turn. Select a pit to begin.");
                 
             } catch (NumberFormatException ex) {
@@ -150,7 +141,7 @@ public class MancalaController {
     
     private void handleGameOver() {
         model.collectRemainingStones();
-        view.updateBoard(model.getBoardState());
+        refreshView();
         
         int[] scores = model.getMancalaScores();
         String winner;
@@ -182,6 +173,12 @@ public class MancalaController {
         stateController.reset();
         view.resetToStyleSelection();
         view.updateUndoButton(false);
+    }
+
+    private void refreshView() {
+        view.updateBoard(model.getBoardState());
+        view.updateCurrentPlayer(model.getCurrentPlayer());
+        view.updateUndoButton(undoController.isUndoAvailable());
     }
     
     public void start() {
